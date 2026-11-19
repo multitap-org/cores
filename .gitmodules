@@ -1,0 +1,10 @@
+[submodule "deps/hosts-common"]
+	path = deps/hosts-common
+	url = https://github.com/multitap-org/hosts-common.git
+[submodule "deps/host-libretro"]
+	path = deps/host-libretro
+	url = https://github.com/multitap-org/host-libretro.git
+[submodule "deps/libretro-common"]
+	path = deps/libretro-common
+	url = https://github.com/libretro/libretro-common.git
+	shallow = true

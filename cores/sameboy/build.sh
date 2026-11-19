@@ -1,0 +1,22 @@
+#!/bin/sh
+# Builds SameBoy's libretro core. Run by scripts/build-core.sh inside the
+# source folder, with the toolchain in the environment (see that script).
+set -eu
+
+# The boot ROMs are assembled with rgbds and built into the core. They're
+# built for this machine (rgbds and SameBoy's logo compressor run here), so
+# the build machine's compiler is used (and the target flags dropped) even
+# when cross compiling.
+env -u CFLAGS -u CXXFLAGS -u LDFLAGS -u CC -u CXX -u AR \
+    make bootroms RGBDS="$TOOLS_DIR/rgbds/" CC="$HOST_CC" CONF=release
+
+# The core itself, with SameBoy's own libretro Makefile. Called directly (not
+# through `make libretro`) so CC/CFLAGS/LDFLAGS come from the environment.
+case "$PLATFORM" in
+    windows) platform=win ;;
+    *)       platform=unix ;;
+esac
+make -C libretro platform="$platform" \
+    BOOTROMS_DIR="$PWD/build/bin/BootROMs" BIN="$PWD/build/bin" -j"$JOBS"
+
+cp "build/bin/sameboy_libretro.$LIB_EXT" "$OUT"

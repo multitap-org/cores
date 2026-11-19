@@ -1,0 +1,147 @@
+# Builds every core in the matrix for each platform with the same toolchains
+# as piccolo's builds, smoke-tests it (scripts/smoke.sh) and uploads dist/:
+# the cores, their SHA-256 and the exact source. Publishing to the server
+# comes later.
+name: Build cores
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: ${{ matrix.core }} (Linux ${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [sameboy]
+        arch: [x86_64, aarch64]
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    # The image piccolo's Flatpak is built with: the freedesktop 25.08 SDK.
+    # Cores built in it match the runtime piccolo's Flatpak runs on.
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-25.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build and smoke-test inside the SDK
+        run: |
+          git config --global --add safe.directory '*'
+          flatpak run --share=network --filesystem="$GITHUB_WORKSPACE" --filesystem=home \
+            --command=sh org.freedesktop.Sdk//25.08 -c \
+            "cd '$GITHUB_WORKSPACE' && scripts/build-core.sh ${{ matrix.core }} linux && scripts/smoke.sh ${{ matrix.core }} linux"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.core }}-linux-${{ matrix.arch }}
+          path: dist/
+
+  windows:
+    name: ${{ matrix.core }} (Windows x86_64)
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [sameboy]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - run: git config --global core.autocrlf false
+        shell: pwsh
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # piccolo's Windows toolchain (UCRT64 GCC), plus what the cores' build
+      # tools need (make, hexdump, bison + libpng for rgbds).
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            make
+            util-linux
+            bison
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-libpng
+
+      - name: Build
+        run: scripts/build-core.sh ${{ matrix.core }} windows
+
+      # The core must only need Windows' own DLLs.
+      - name: Check DLL dependencies
+        run: |
+          objdump -p dist/windows/*.dll | grep 'DLL Name' | tee dlls.txt
+          if grep -iE 'libstdc|libgcc|libwinpthread' dlls.txt; then
+            echo "the core depends on MSYS2 DLLs"
+            exit 1
+          fi
+
+      - name: Smoke test
+        run: scripts/smoke.sh ${{ matrix.core }} windows
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.core }}-windows-x86_64
+          path: dist/
+
+  android:
+    name: ${{ matrix.core }} (Android arm64-v8a)
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [sameboy]
+    runs-on: ubuntu-24.04
+    env:
+      NDK_VERSION: r30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build bison libpng-dev bsdextrautils
+
+      # The NDK piccolo's Android build uses (on x86_64 its own clang runs;
+      # on Andrés's arm64 machine a distro clang with its sysroot).
+      - uses: actions/cache@v4
+        id: ndk
+        with:
+          path: ~/ndk
+          key: ndk-${{ env.NDK_VERSION }}
+      - name: NDK
+        if: steps.ndk.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/ndk
+          curl -sSLo ndk.zip "https://dl.google.com/android/repository/android-ndk-$NDK_VERSION-linux.zip"
+          unzip -q ndk.zip -d ~/ndk
+          rm ndk.zip
+
+      - name: Build
+        run: ANDROID_NDK_ROOT=~/ndk/android-ndk-$NDK_VERSION scripts/build-core.sh ${{ matrix.core }} android
+
+      - name: Check (arm64, 16 KB pages)
+        run: scripts/smoke.sh ${{ matrix.core }} android
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.core }}-android-arm64-v8a
+          path: dist/
