@@ -37,6 +37,9 @@ jobs:
       - name: Build and smoke-test inside the SDK
         run: |
           git config --global --add safe.directory '*'
+          # The checkout belongs to the runner's user; inside flatpak's sandbox
+          # root has no capabilities left to write to it.
+          chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
           flatpak run --share=network --filesystem="$GITHUB_WORKSPACE" --filesystem=home \
             --command=sh org.freedesktop.Sdk//25.08 -c \
             "cd '$GITHUB_WORKSPACE' && scripts/build-core.sh ${{ matrix.core }} linux && scripts/smoke.sh ${{ matrix.core }} linux"

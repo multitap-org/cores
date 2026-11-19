@@ -4,11 +4,12 @@
 set -eu
 
 # The boot ROMs are assembled with rgbds and built into the core. They're
-# built for this machine (rgbds and SameBoy's logo compressor run here), so
+# built for this machine (rgbds and SameBoy's logo compressor run here; on
+# Windows its Makefile wants an MSVC-style clang for that, NATIVE_CC), so
 # the build machine's compiler is used (and the target flags dropped) even
 # when cross compiling.
 env -u CFLAGS -u CXXFLAGS -u LDFLAGS -u CC -u CXX -u AR \
-    make bootroms RGBDS="$TOOLS_DIR/rgbds/" CC="$HOST_CC" CONF=release
+    make bootroms RGBDS="$TOOLS_DIR/rgbds/" CC="$HOST_CC" NATIVE_CC="$HOST_CC" CONF=release
 
 # The core itself, with SameBoy's own libretro Makefile. Called directly (not
 # through `make libretro`) so CC/CFLAGS/LDFLAGS come from the environment.
