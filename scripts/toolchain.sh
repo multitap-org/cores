@@ -62,7 +62,14 @@ toolchain_android() {
     export CFLAGS="-fPIC -ffunction-sections -fdata-sections"
     export CXXFLAGS="$CFLAGS"
     # Bionic needs 16 KB page alignment on new devices (and Google Play from 2027).
-    export LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -unwindlib=libunwind -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,--gc-sections"
+    # Bionic has librt and libpthread inside libc; Makefiles written for glibc
+    # still link -lrt -lpthread: empty archives of those names satisfy them.
+    stubs="$repo_root/build/android-stubs"
+    mkdir -p "$stubs"
+    for stub in rt pthread; do
+        [ -f "$stubs/lib$stub.a" ] || "$llvm/llvm-ar" rc "$stubs/lib$stub.a"
+    done
+    export LDFLAGS="-L$stubs -fuse-ld=lld -rtlib=compiler-rt -unwindlib=libunwind -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,--gc-sections"
     TOOLCHAIN_STRIP="$llvm/llvm-strip"
 
     # The same for cores built with CMake (CMake reads CMAKE_TOOLCHAIN_FILE
