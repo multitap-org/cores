@@ -5,8 +5,8 @@
 # Output: dist/<platform>/<file>_libretro.<ext> (+ .sha256), and the exact source
 # as dist/source/<file>-<commit>.tar.gz (the source offer for GPL cores).
 #
-# The core's source is fetched at the commit in cores/<core>/core.cfg and built
-# by cores/<core>/build.sh, which gets in its environment:
+# The core's source is fetched at the commit in cores/<core>/core.cfg, our
+# patches applied (cores/<core>/*.patch), and built by cores/<core>/build.sh, which gets in its environment:
 #   PLATFORM, LIB_EXT, OUT (file to write), TOOLS_DIR, HOST_CC, JOBS,
 #   and CC/CXX/AR/CFLAGS/CXXFLAGS/LDFLAGS for the target (see toolchain.sh).
 set -eu
@@ -33,6 +33,17 @@ mkdir -p "$src"
 git -C "$src" init -q
 git -C "$src" fetch -q --depth 1 "$repo" "$commit"
 git -C "$src" checkout -q FETCH_HEAD
+
+# Our patches (cores/<core>/*.patch, in name order), committed so the source
+# archive below is exactly what gets built.
+patches=$(ls "$repo_root/cores/$core/"*.patch 2>/dev/null || true)
+if [ -n "$patches" ]; then
+    for patch in $patches; do
+        git -C "$src" apply --index "$patch" || die "$patch doesn't apply"
+    done
+    git -C "$src" -c user.name=multitap -c user.email=cores@multitap.invalid \
+        commit -q -m "Multitap patches: $(cd "$repo_root/cores/$core" && ls *.patch | tr '\n' ' ')"
+fi
 
 mkdir -p "$repo_root/dist/source"
 git -C "$src" archive --format=tar.gz --prefix="$file-$commit/" \

@@ -3,7 +3,7 @@
 #   scripts/smoke.sh <core> <platform>
 # linux / windows: loads it with host-libretro's libretro_core_info (the same
 # host piccolo uses) and runs 300 frames of our own test content for its
-# system (smoke/<smoke>.asm); every frame must produce video.
+# system (smoke/<smoke>.asm or .py); every frame must produce video.
 # android: can't run here; checks it's an arm64 ELF with 16 KB aligned segments.
 set -eu
 . "$(dirname "$0")/common.sh"
@@ -48,6 +48,12 @@ case "$smoke" in
         "$rgbds/rgblink" -o "$work/gb.gb" "$work/gb.o"
         "$rgbds/rgbfix" -v -p 0xFF -t SMOKE "$work/gb.gb"
         content="$work/gb.gb"
+        ;;
+    snes)
+        work="$repo_root/build/smoke"
+        mkdir -p "$work"
+        python3 "$repo_root/smoke/snes.py" "$work/snes.sfc"
+        content="$work/snes.sfc"
         ;;
     "") ;;
     *) die "unknown smoke content: $smoke" ;;

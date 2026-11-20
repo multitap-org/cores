@@ -2,12 +2,15 @@
 
 The libretro cores Multitap's frontends (piccolo) distribute: which cores,
 which version, built how, under what license. Not the cores' source: that
-stays upstream (or in multitap-org mirrors once a core carries our patches).
+stays upstream; our changes are patches here (`cores/<core>/*.patch`, applied
+before building and part of the source archive).
 
 - `cores/<core>/core.cfg`: upstream repository, tag + pinned commit, license,
   `free` (true = free-licensed, can ship in store builds; false = non-commercial
   or similar, offered only by the downloader of non-store builds), build tools,
   smoke-test content.
+- `cores/<core>/*.patch`: our changes to the core (Multitap's API additions,
+  `libretro_extensions.h` from host-libretro), applied in name order.
 - `cores/<core>/build.sh`: how the core is built (the toolchain comes from
   `scripts/toolchain.sh`).
 - `scripts/build-core.sh <core> <linux|windows|android>`: fetches the source at
