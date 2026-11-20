@@ -64,6 +64,35 @@ toolchain_android() {
     # Bionic needs 16 KB page alignment on new devices (and Google Play from 2027).
     export LDFLAGS="-fuse-ld=lld -rtlib=compiler-rt -unwindlib=libunwind -static-libstdc++ -Wl,--build-id=sha1 -Wl,--no-undefined -Wl,-z,max-page-size=16384 -Wl,--gc-sections"
     TOOLCHAIN_STRIP="$llvm/llvm-strip"
+
+    # The same for cores built with CMake (CMake reads CMAKE_TOOLCHAIN_FILE
+    # from the environment): Linux + aarch64 rather than CMake's own Android
+    # support, which looks for the NDK's x86_64-only compiler (as piccolo's
+    # android-toolchain.cmake does).
+    toolchain_file="$repo_root/build/android-toolchain.cmake"
+    mkdir -p "$repo_root/build"
+    cat > "$toolchain_file" <<CMAKE
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(ANDROID TRUE)
+set(CMAKE_C_COMPILER "$llvm/clang")
+set(CMAKE_CXX_COMPILER "$llvm/clang++")
+set(CMAKE_C_COMPILER_TARGET aarch64-linux-android$api)
+set(CMAKE_CXX_COMPILER_TARGET aarch64-linux-android$api)
+set(CMAKE_SYSROOT "$prebuilt/sysroot")
+set(CMAKE_AR "$llvm/llvm-ar" CACHE FILEPATH "")
+set(CMAKE_RANLIB "$llvm/llvm-ranlib" CACHE FILEPATH "")
+set(CMAKE_C_FLAGS_INIT "$CFLAGS $resource")
+set(CMAKE_CXX_FLAGS_INIT "$CXXFLAGS $resource")
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "$LDFLAGS")
+set(CMAKE_MODULE_LINKER_FLAGS_INIT "$LDFLAGS")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "$LDFLAGS")
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+CMAKE
+    export CMAKE_TOOLCHAIN_FILE="$toolchain_file"
 }
 
 toolchain_strip() {

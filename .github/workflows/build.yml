@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy]
+        core: [sameboy, mgba]
         arch: [x86_64, aarch64]
         include:
           - arch: x86_64
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy]
+        core: [sameboy, mgba]
     runs-on: windows-latest
     defaults:
       run:
@@ -111,7 +111,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy]
+        core: [sameboy, mgba]
     runs-on: ubuntu-24.04
     env:
       NDK_VERSION: r30
