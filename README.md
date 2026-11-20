@@ -17,6 +17,12 @@ stays upstream (or in multitap-org mirrors once a core carries our patches).
   `libretro_core_info` (the host piccolo uses; built from `deps/`) and runs 300
   frames of our own test content (`smoke/`); on Android it checks arm64 and
   16 KB page alignment.
+- `scripts/make-release.sh`: turns the CI's builds into a GitHub Release
+  (deterministic zips, the sources, `manifest.cfg` with sizes and SHA-256).
+- `tools/index_sign.cpp`: keygen / sign / verify for the downloader's indexes
+  (Monocypher EdDSA, the same Monocypher piccolo verifies with). The server's
+  publisher (private repo) pulls the latest release, checks it, writes one
+  signed index per target to cores.get-piccolo.app.
 - CI (`.github/workflows/build.yml`): piccolo's toolchains. Linux in the
   freedesktop 25.08 Flatpak SDK (x86_64, aarch64), Windows with MSYS2 UCRT64,
   Android with the NDK (API 28, 16 KB pages).

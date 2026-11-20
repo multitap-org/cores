@@ -8,3 +8,6 @@
 	path = deps/libretro-common
 	url = https://github.com/libretro/libretro-common.git
 	shallow = true
+[submodule "deps/monocypher"]
+	path = deps/monocypher
+	url = https://github.com/LoupVaillant/Monocypher.git

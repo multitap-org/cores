@@ -1,7 +1,9 @@
 # Builds every core in the matrix for each platform with the same toolchains
 # as piccolo's builds, smoke-tests it (scripts/smoke.sh) and uploads dist/:
-# the cores, their SHA-256 and the exact source. Publishing to the server
-# comes later.
+# the cores, their SHA-256 and the exact source. On main (and by hand), when
+# every build passed, the "release" job makes a GitHub Release from them
+# (scripts/make-release.sh: zips + manifest.cfg); the server's publisher pulls
+# the latest release, signs the indexes and serves them.
 name: Build cores
 
 on:
@@ -148,3 +150,30 @@ jobs:
         with:
           name: ${{ matrix.core }}-android-arm64-v8a
           path: dist/
+
+  release:
+    name: GitHub Release
+    needs: [linux, windows, android]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Release files
+        run: scripts/make-release.sh artifacts release
+
+      # One release per run; the publisher only looks at the latest.
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="cores-$(date -u +%Y%m%d)-${{ github.run_number }}"
+          gh release create "$tag" release/* --repo "${{ github.repository }}" \
+            --title "$tag" --latest \
+            --notes "Cores built from ${{ github.sha }} by run ${{ github.run_id }}. manifest.cfg lists every file with its SHA-256."
