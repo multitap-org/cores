@@ -40,6 +40,10 @@ for dir in "$artifacts"/*/; do
     core=${name%-"$target"}
     cfg="$repo_root/cores/$core/core.cfg"
     [ -f "$cfg" ] || die "artifact $name: no $cfg"
+    case "$(cfg_get "$cfg" type)" in
+        main|legacy|experimental) ;;
+        *) die "$cfg: type must be main, legacy or experimental" ;;
+    esac
 
     file=$(cfg_get "$cfg" file)
     commit=$(cfg_get "$cfg" commit)
@@ -77,6 +81,7 @@ for dir in "$artifacts"/*/; do
         echo "commit=$commit"
         echo "license=$(cfg_get "$cfg" license)"
         echo "free=$(cfg_get "$cfg" free)"
+        echo "type=$(cfg_get "$cfg" type)"
         echo "systems=$(cfg_get "$cfg" systems)"
         echo "asset=$asset"
         echo "size=$(size_of "$out/$asset")"

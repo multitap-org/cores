@@ -7,8 +7,11 @@ before building and part of the source archive).
 
 - `cores/<core>/core.cfg`: upstream repository, tag + pinned commit, license,
   `free` (true = free-licensed, can ship in store builds; false = non-commercial
-  or similar, offered only by the downloader of non-store builds), build tools,
-  smoke-test content.
+  or similar, offered only by the downloader of non-store builds), `type`
+  (`main`: listed by default; `legacy`: older versions of a core, and
+  `experimental`: unsupported or not fully working in piccolo, both hidden
+  until the user ticks OLDER VERSIONS / EXPERIMENTAL in TOOLS > CORES), build
+  tools, smoke-test content.
 - `cores/<core>/*.patch`: our changes to the core (Multitap's API additions,
   `libretro_extensions.h` from host-libretro), applied in name order.
 - `cores/<core>/build.sh`: how the core is built (the toolchain comes from
