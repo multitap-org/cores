@@ -23,6 +23,10 @@ stays upstream (or in multitap-org mirrors once a core carries our patches).
   (Monocypher EdDSA, the same Monocypher piccolo verifies with). The server's
   publisher (private repo) pulls the latest release, checks it, writes one
   signed index per target to cores.get-piccolo.app.
+- `keys/current.public`: the public key the indexes at
+  https://cores.get-piccolo.app are signed with (key_id 20ad1a6e8a2bfdca).
+  Check one: `index_sign verify keys/current.public linux-x86_64.cfg` (with its
+  `.sig` next to it). piccolo will carry it (plus a "next" key for rotation).
 - CI (`.github/workflows/build.yml`): piccolo's toolchains. Linux in the
   freedesktop 25.08 Flatpak SDK (x86_64, aarch64), Windows with MSYS2 UCRT64,
   Android with the NDK (API 28, 16 KB pages).
