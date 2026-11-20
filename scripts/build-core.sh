@@ -7,7 +7,7 @@
 #
 # The core's source is fetched at the commit in cores/<core>/core.cfg, our
 # patches applied (cores/<core>/*.patch), and built by cores/<core>/build.sh, which gets in its environment:
-#   PLATFORM, LIB_EXT, OUT (file to write), TOOLS_DIR, HOST_CC, JOBS,
+#   PLATFORM, LIB_EXT, OUT (file to write), TOOLS_DIR, HOST_CC, JOBS, REPO_ROOT,
 #   and CC/CXX/AR/CFLAGS/CXXFLAGS/LDFLAGS for the target (see toolchain.sh).
 set -eu
 . "$(dirname "$0")/common.sh"
@@ -55,6 +55,7 @@ toolchain_setup "$platform"
 out_dir="$repo_root/dist/$platform"
 mkdir -p "$out_dir"
 export PLATFORM="$platform"
+export REPO_ROOT="$repo_root"
 export LIB_EXT=$(lib_ext "$platform")
 export OUT="$out_dir/${file}_libretro.$LIB_EXT"
 export TOOLS_DIR="$repo_root/build/host-tools"

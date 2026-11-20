@@ -3,7 +3,8 @@
 #   scripts/smoke.sh <core> <platform>
 # linux / windows: loads it with host-libretro's libretro_core_info (the same
 # host piccolo uses) and runs 300 frames of our own test content for its
-# system (smoke/<smoke>.asm or .py); every frame must produce video.
+# system (smoke/<smoke>.asm or .py); every frame must produce video. smoke=load:
+# no content of ours (a BIOS is needed, ...), the core is only loaded and inited.
 # android: can't run here; checks it's an arm64 ELF with 16 KB aligned segments.
 set -eu
 . "$(dirname "$0")/common.sh"
@@ -55,7 +56,13 @@ case "$smoke" in
         python3 "$repo_root/smoke/snes.py" "$work/snes.sfc"
         content="$work/snes.sfc"
         ;;
-    "") ;;
+    pce)
+        work="$repo_root/build/smoke"
+        mkdir -p "$work"
+        python3 "$repo_root/smoke/pce.py" "$work/pce.pce"
+        content="$work/pce.pce"
+        ;;
+    load) ;;
     *) die "unknown smoke content: $smoke" ;;
 esac
 
@@ -64,10 +71,20 @@ rm -rf "$run_dir"
 mkdir -p "$run_dir/system" "$run_dir/save"
 log="$run_dir/log.txt"
 frames=300
+# No test content of ours (systems that need a BIOS, or none written yet):
+# load the core and retro_init it, no frames.
+if [ "$smoke" = load ]; then
+    frames=0
+fi
 if ! "$core_info" --frames "$frames" --system "$run_dir/system" --save "$run_dir/save" \
         "$lib" $content > "$log" 2>&1; then
     cat "$log"
     die "libretro_core_info failed for $lib"
+fi
+if [ "$frames" -eq 0 ]; then
+    grep -q 'No content given' "$log" || { cat "$log"; die "$lib: unexpected load result"; }
+    echo "ok: $lib (loaded, no test content)"
+    exit 0
 fi
 summary=$(grep 'Ran [0-9]* frames' "$log" || true)
 echo "$summary"
