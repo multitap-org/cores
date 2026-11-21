@@ -62,6 +62,18 @@ case "$smoke" in
         python3 "$repo_root/smoke/pce.py" "$work/pce.pce"
         content="$work/pce.pce"
         ;;
+    md)
+        work="$repo_root/build/smoke"
+        mkdir -p "$work"
+        python3 "$repo_root/smoke/md.py" "$work/md.md"
+        content="$work/md.md"
+        ;;
+    dos)
+        work="$repo_root/build/smoke"
+        mkdir -p "$work"
+        python3 "$repo_root/smoke/dos.py" "$work/dos.com"
+        content="$work/dos.com"
+        ;;
     load) ;;
     *) die "unknown smoke content: $smoke" ;;
 esac

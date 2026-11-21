@@ -1,6 +1,8 @@
 # Sourced by a core's build.sh: libretro_make <file> builds a core with its
 # libretro Makefile (libretro's usual one: platform=unix / win, TARGET
 # <file>_libretro.<ext> in the source folder) and copies it to $OUT.
+# libretro_make <file> <makefile>: the same with another Makefile's name
+# (Makefile.libretro, ...).
 #
 # Our toolchain comes in through CC / CXX (Android's target flags live there,
 # toolchain.sh), LDFLAGS from the environment (these Makefiles append to it).
@@ -9,6 +11,7 @@
 
 libretro_make() {
     file=$1
+    makefile=${2:-Makefile}
     case "$PLATFORM" in
         windows) make_platform=win ;;
         *)       make_platform=unix ;;
@@ -17,6 +20,6 @@ libretro_make() {
     if [ "$PLATFORM" = android ]; then
         set -- "$@" IS_X86=0 AR="$AR"
     fi
-    make "$@" -j"$JOBS"
+    make -f "$makefile" "$@" -j"$JOBS"
     cp "${file}_libretro.$LIB_EXT" "$OUT"
 }
