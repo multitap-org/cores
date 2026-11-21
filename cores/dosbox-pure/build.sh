@@ -1,10 +1,11 @@
 #!/bin/sh
 # Builds DOSBox Pure with its own Makefile (not libretro's usual one).
 #
-# The Makefile sets LDFLAGS itself (`:=`: the environment's are dropped) and
-# adds CPUFLAGS (MAKE_CPUFLAGS) to both compiling and linking, so what the
-# target needs from us goes there: on Windows libgcc / libstdc++ /
-# winpthread linked in (only Windows' own DLLs next to the core).
+# The Makefile sets LDFLAGS itself (`:=`: the environment's are dropped), so
+# the toolchain's link flags (toolchain.sh: Windows' static libgcc /
+# libstdc++ / winpthread, Android's lld, 16 KB pages and -lpthread stub)
+# go in through LDLIBS, which only the link uses (the Makefile's own is
+# -lpthread, kept).
 # On arm64 (Linux, Android) the dynarec aligns its code cache to PAGESIZE,
 # which the Makefile would take from the build machine's getconf: 16 KB
 # fits 4 KB and 16 KB kernels alike (Android's new devices are 16 KB).
@@ -15,11 +16,10 @@ cpuflags=""
 case "$PLATFORM" in
     windows)
         set -- platform=windows
-        cpuflags="-static-libgcc -static-libstdc++ -static"
         ;;
     android)
         set --
-        cpuflags="-DPAGESIZE=16384 -fPIC"
+        cpuflags="-DPAGESIZE=16384"
         ;;
     *)
         set --
@@ -28,6 +28,6 @@ case "$PLATFORM" in
         fi
         ;;
 esac
-make "$@" CXX="${CXX:-c++}" MAKE_CPUFLAGS="$cpuflags" -j"$JOBS"
+make "$@" CXX="${CXX:-c++}" MAKE_CPUFLAGS="$cpuflags" LDLIBS="${LDFLAGS:-} -lpthread" -j"$JOBS"
 
 cp "dosbox_pure_libretro.$LIB_EXT" "$OUT"
