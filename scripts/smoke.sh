@@ -3,7 +3,8 @@
 #   scripts/smoke.sh <core> <platform>
 # linux / windows: loads it with host-libretro's libretro_core_info (the same
 # host piccolo uses) and runs 300 frames of our own test content for its
-# system (smoke/<smoke>.asm or .py); every frame must produce video. smoke=load:
+# system (smoke/<smoke>.asm or .py); every frame must produce video. smoke=none:
+# a core that runs without content (SET_SUPPORT_NO_GAME), 300 frames of it alone. smoke=load:
 # no content of ours (a BIOS is needed, ...), the core is only loaded and inited.
 # android: can't run here; checks it's an arm64 ELF with 16 KB aligned segments.
 set -eu
@@ -74,6 +75,7 @@ case "$smoke" in
         python3 "$repo_root/smoke/dos.py" "$work/dos.com"
         content="$work/dos.com"
         ;;
+    none) ;;
     load) ;;
     *) die "unknown smoke content: $smoke" ;;
 esac
