@@ -13,10 +13,20 @@ env -u CFLAGS -u CXXFLAGS -u LDFLAGS -u CC -u CXX -u AR \
 
 # The core itself, with SameBoy's own libretro Makefile. Called directly (not
 # through `make libretro`) so CC/CFLAGS/LDFLAGS come from the environment.
+# The web: its emscripten platform, a static archive (named .bc by the
+# Makefile; an archive all the same). The Makefile doesn't notice changed
+# flags, but the source is a fresh copy every time.
 case "$PLATFORM" in
     windows) platform=win ;;
+    web)     platform=emscripten ;;
     *)       platform=unix ;;
 esac
+if [ "$PLATFORM" = web ]; then
+    make -C libretro platform=emscripten STATIC_LINKING=1 AR="$AR" \
+        BOOTROMS_DIR="$PWD/build/bin/BootROMs" BIN="$PWD/build/bin" -j"$JOBS"
+    cp build/bin/sameboy_libretro_emscripten.bc "$OUT"
+    exit 0
+fi
 make -C libretro platform="$platform" \
     BOOTROMS_DIR="$PWD/build/bin/BootROMs" BIN="$PWD/build/bin" -j"$JOBS"
 

@@ -16,6 +16,7 @@ jobs_count() {
 lib_ext() {
     case "$1" in
         windows) echo dll ;;
+        web)     echo a ;;
         *)       echo so ;;
     esac
 }

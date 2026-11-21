@@ -4,6 +4,9 @@
 #   windows  MSYS2 UCRT64's GCC, libgcc static (as piccolo's Windows build)
 #   android  clang + the NDK's sysroot, API 28, lld, compiler-rt, 16 KB pages
 #            (as piccolo's android/cmake/android-toolchain.cmake)
+#   web      Emscripten (emcc on PATH, the emsdk piccolo's web build pins):
+#            a static archive that piccolo links into its wasm, every object
+#            built with -pthread (piccolo's wasm is threaded)
 # Android needs ANDROID_NDK_ROOT. On x86_64 the NDK's own clang is used; on
 # other hosts (Google only ships it for x86_64) a distro clang, PICCOLO_LLVM_ROOT
 # (default /usr/lib/llvm-21), with the NDK's runtime libraries.
@@ -25,6 +28,12 @@ toolchain_setup() {
             ;;
         android)
             toolchain_android
+            ;;
+        web)
+            command -v emcc >/dev/null 2>&1 || die "no emcc on PATH (source emsdk_env.sh)"
+            export CC=emcc CXX=em++ AR=emar RANLIB=emranlib
+            export CFLAGS="-pthread" CXXFLAGS="-pthread"
+            TOOLCHAIN_STRIP=""
             ;;
         *)
             die "unknown platform: $1"
@@ -102,6 +111,9 @@ CMAKE
     export CMAKE_TOOLCHAIN_FILE="$toolchain_file"
 }
 
+# An archive for the web is linked again (and stripped) by piccolo's build.
 toolchain_strip() {
-    "$TOOLCHAIN_STRIP" --strip-unneeded "$1"
+    if [ -n "$TOOLCHAIN_STRIP" ]; then
+        "$TOOLCHAIN_STRIP" --strip-unneeded "$1"
+    fi
 }
