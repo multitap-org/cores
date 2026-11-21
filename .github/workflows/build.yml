@@ -167,7 +167,10 @@ jobs:
     env:
       EMSDK_VERSION: 6.0.13   # piccolo's web build (.github/workflows/web.yml)
     steps:
+      # libretro.h for cores built without their submodules (piccobots).
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Packages
         run: |
