@@ -1,9 +1,12 @@
 #!/bin/sh
 # Builds one core for one platform:
 #   scripts/build-core.sh <core> <platform>
-#   platform: linux (this machine's arch), windows (from MSYS2 UCRT64), android (arm64-v8a)
-# Output: dist/<platform>/<file>_libretro.<ext> (+ .sha256), and the exact source
-# as dist/source/<file>-<commit>.tar.gz (the source offer for GPL cores).
+#   platform: linux (this machine's arch), windows (from MSYS2 UCRT64), android (arm64-v8a),
+#             web (Emscripten: a static archive for piccolo's browser build)
+# Output: dist/<platform>/<file>_libretro.<ext> (+ .sha256), the core's license
+# as dist/<platform>/<file>-LICENSE (core.cfg license_file, default LICENSE),
+# and the exact source as dist/source/<file>-<commit>.tar.gz (the source offer
+# for GPL cores).
 #
 # The core's source is fetched at the commit in cores/<core>/core.cfg, our
 # patches applied (cores/<core>/*.patch), and built by cores/<core>/build.sh, which gets in its environment:
@@ -64,6 +67,11 @@ export JOBS=$(jobs_count)
 (cd "$src" && sh "$repo_root/cores/$core/build.sh")
 
 [ -f "$OUT" ] || die "$core didn't produce $OUT"
+# The license text, for what ships the core (piccolo's web zip carries it).
+license_file=$(cfg_get "$cfg" license_file)
+if [ -f "$src/${license_file:-LICENSE}" ]; then
+    cp "$src/${license_file:-LICENSE}" "$out_dir/$file-LICENSE"
+fi
 toolchain_strip "$OUT"
 (cd "$out_dir" && sha256sum "$(basename "$OUT")" > "$(basename "$OUT").sha256")
 echo "built $OUT"

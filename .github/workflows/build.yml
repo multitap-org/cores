@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy, mgba, bsnes, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
+        core: [sameboy, mgba, bsnes, snes9x, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
         arch: [x86_64, aarch64]
         include:
           - arch: x86_64
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy, mgba, bsnes, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
+        core: [sameboy, mgba, bsnes, snes9x, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
     runs-on: windows-latest
     defaults:
       run:
@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        core: [sameboy, mgba, bsnes, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
+        core: [sameboy, mgba, bsnes, snes9x, supafaust, beetle-pce, beetle-psx, beetle-saturn, beetle-wswan, beetle-ngp, beetle-vb]
     runs-on: ubuntu-24.04
     env:
       NDK_VERSION: r30
@@ -151,6 +151,49 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.core }}-android-arm64-v8a
+          path: dist/
+
+  # The web: static archives piccolo's browser build links in (its web/build-core.sh
+  # runs scripts/build-core.sh <core> web from its deps/cores). Built here so a
+  # core that stops building for the web shows up in this repo first. Not in
+  # the release: piccolo builds them itself, with the emsdk it pins.
+  web:
+    name: ${{ matrix.core }} (web)
+    strategy:
+      fail-fast: false
+      matrix:
+        core: [sameboy, snes9x]
+    runs-on: ubuntu-24.04
+    env:
+      EMSDK_VERSION: 6.0.13   # piccolo's web build (.github/workflows/web.yml)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build bison libpng-dev
+
+      - uses: actions/cache@v4
+        id: emsdk
+        with:
+          path: ~/emsdk
+          key: emsdk-${{ env.EMSDK_VERSION }}
+      - name: emsdk
+        if: steps.emsdk.outputs.cache-hit != 'true'
+        run: |
+          git clone -q https://github.com/emscripten-core/emsdk ~/emsdk
+          ~/emsdk/emsdk install "$EMSDK_VERSION"
+          ~/emsdk/emsdk activate "$EMSDK_VERSION"
+
+      - name: Build
+        run: |
+          . ~/emsdk/emsdk_env.sh
+          scripts/build-core.sh ${{ matrix.core }} web
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.core }}-web
           path: dist/
 
   release:

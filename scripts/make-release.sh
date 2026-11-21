@@ -30,6 +30,11 @@ size_of() {
 
 for dir in "$artifacts"/*/; do
     name=$(basename "$dir")
+    # The web's archives aren't offered by the downloader: piccolo's browser
+    # build makes its own (scripts/build-core.sh <core> web).
+    case "$name" in
+        *-web) continue ;;
+    esac
     target=""
     for t in linux-x86_64 linux-aarch64 windows-x86_64 android-arm64-v8a; do
         case "$name" in
