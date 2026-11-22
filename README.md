@@ -41,6 +41,20 @@ before building and part of the source archive).
   Android with the NDK (API 28, 16 KB pages), the web with emsdk (the version
   piccolo's web build pins).
 
+## Our changes to the cores
+
+Each core is built from its upstream repository at the commit pinned in
+`core.cfg`. Small changes are patches in `cores/<core>/*.patch`. When a core
+needs bigger changes, it moves to a fork under multitap-org, and `core.cfg`
+points to the fork. Every patch, and every fork, is listed and explained
+here. A new or changed patch updates this section in the same commit.
+
+| Core | Patch / fork | What it changes, and why |
+|------|--------------|--------------------------|
+| bsnes | `multitap-run-ahead.patch` | bsnes's own run-ahead ("Internal Run-Ahead") is driven by the frontend instead of a core option, so piccolo's one RUN-AHEAD setting covers bsnes too. The patch adds `libretro_extensions.h` (Multitap's private environment calls, from host-libretro). In `retro_init`, bsnes announces it can do up to 4 frames (`RETRO_ENVIRONMENT_EXT_SET_RUN_AHEAD`). In each `retro_run`, it asks how many frames to run ahead (`RETRO_ENVIRONMENT_EXT_GET_RUN_AHEAD`). The core option is removed. In a frontend that doesn't know the calls (RetroArch, ...), they return false, and with the option gone this bsnes build runs there without run-ahead. bsnes's own rules are unchanged: no run-ahead while fast-forwarding. |
+
+Every other core is built from upstream as it is.
+
 Locally (Linux):
 
 ```sh
